@@ -9,21 +9,80 @@ using namespace std;
 ///////// Creación de estructuras /////////
 
 // Se crea estructura de las páginas
-struct Pagina
+
+class Página
 {
-    int pagina[256]; 
+private:
+    int h;
+public:
+    vector <int> pagina[256];
+    bool buscar(int y);
+    void insertar(int y);
 };
+
+class Pagina_principal: public Página{
+public:
+    vector<class Página> paginas_rebalse;
+};
+
+// Funciones de la Clase Página
+
+bool Página::buscar(int y)
+{
+    int count = pagina.size(); 
+    for (size_t i = 0; i < count; i++)
+    {
+        if (pagina[i] == y){
+            return true;
+        }
+        if (pagina[i] == NULL)
+        {
+            return false;
+        }
+        
+    }
+}
+
+void Página::insertar(int y)
+{
+    int count = pagina.size(); 
+    for (size_t i = 0; i < count; i++)
+    {
+        if (pagina[i] == NULL){
+            pagina[i] = y;
+            break;
+        }
+        
+    }
+}
+
+
+
+
+
+
+
+struct Paginas_rebalse
+{
+    int h;
+    int pagina[256];
+};
+
+struct Pagina_principal
+{
+    int h;
+    int pagina[256]; 
+    vector<struct Paginas_rebalse> paginas_rebalse;
+};
+
 
 // Se crea estructura de la lista de hashing
 struct lhashing
 {
-    int h;
     int t;
     int p;
     int costo_actual;
-    vector<vector <int>[256]> paginas_principales;
-    vector<vector <int>[256]> paginas_rebalse;
-    
+    vector<struct Pagina_principal> paginas_principales;
 };
 
 ///////// Creación de funciones  /////////
@@ -39,13 +98,32 @@ double porcentaje_llenado(vector<struct Pagina> paginas){
     return
 }
 
+//Función para buscar en página
+
+bool buscar_pagina(int y, struct )
+
 // Función para ver si un elemento "y" está o no en la lista de hashing "lhashing"
 bool buscar_hash(int y, struct lhashing *lh){
-    vector<vector <int>[256]> pag_principal = lh -> paginas_principales;
-    vector<vector <int>[256]> pag_rebalse = lh -> paginas_rebalse;
+    vector<struct Pagina_principal> pag_principal = lh -> paginas_principales;
 
+    int k = h(y) % (2^{lhashing.t + 1});
     
+    // Buscamos en página principal con valor k 
+    Pagina_principal pagk = pag_principal[k];
 
+
+
+
+
+
+    // Buscamos en páginas de rebalse asociadas a la página principal con valor k 
+    vector<struct Paginas_rebalse> pag_rebalse = pagk.paginas_rebalse;
+    int count = pag_rebalse.size();
+    for (int i = 0; i < count; i++)
+    {
+        /* code */
+    }
+    
 
     lh-> costo_actual++;
     return true
