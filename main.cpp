@@ -100,7 +100,9 @@ double porcentaje_llenado(vector<struct Pagina> paginas){
 
 //Función para buscar en página
 
-bool buscar_pagina(int y, struct )
+bool buscar_pagina(int y, struct ){
+
+}
 
 // Función para ver si un elemento "y" está o no en la lista de hashing "lhashing"
 bool buscar_hash(int y, struct lhashing *lh){
@@ -110,23 +112,30 @@ bool buscar_hash(int y, struct lhashing *lh){
     
     // Buscamos en página principal con valor k 
     Pagina_principal pagk = pag_principal[k];
-
-
-
-
-
+    int count = pagk.size();
+    for (int i = 0; i < count; i++){
+        lh-> costo_actual++;
+        if(buscar_pagina(y, pagk.pagina[i])){
+            return true;
+        }
+    }
 
     // Buscamos en páginas de rebalse asociadas a la página principal con valor k 
     vector<struct Paginas_rebalse> pag_rebalse = pagk.paginas_rebalse;
-    int count = pag_rebalse.size();
-    for (int i = 0; i < count; i++)
-    {
-        /* code */
-    }
-    
 
-    lh-> costo_actual++;
-    return true
+    //Se ve que existan páginas de rebalse
+    if(pag_rebalse != NULL){
+        int count = pag_rebalse.size();
+        // Se busca en cada página de rebalse
+        for (int i = 0; i < count; i++){
+            lh-> costo_actual++;
+            if(buscar_pagina(y, pag_rebalse[i])){
+                return true;
+            }
+        }
+    }
+    //No se encontró el elemento y 
+    return false
 }
 
 // Función que inserta un elemento en la lista de hashing cuando este no se encuentre
