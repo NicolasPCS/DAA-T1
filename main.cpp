@@ -3,6 +3,7 @@
 #include <list>
 #include <vector>
 #include <algorithm>
+#include <cmath>
 using namespace std;
 
 
@@ -58,20 +59,16 @@ void Página::insertar(int y)
 
 
 
-
-
-
-
 struct Paginas_rebalse
 {
     int h;
-    int pagina[256];
+    vector <int> pagina[256];
 };
 
 struct Pagina_principal
 {
     int h;
-    int pagina[256]; 
+    vector <int> pagina[256];
     vector<struct Paginas_rebalse> paginas_rebalse;
 };
 
@@ -90,7 +87,7 @@ struct lhashing
 
 // Función de hashing h(y) que debe devolver un valor aleatorio entre 0 y 264 − 1 para cualquier elemento y
 long long h(int y){
-    long long hash = rand() % (2^[64]);
+    long long hash = rand() % pow(2,64);
     return hash;
 }
 
@@ -112,8 +109,9 @@ bool buscar_hash(int y, struct lhashing *lh){
     
     // Buscamos en página principal con valor k 
     Pagina_principal pagk = pag_principal[k];
-    int count = pagk.size();
-    for (int i = 0; i < count; i++){
+    //vector <int> pag[256] = pagk.pagina;
+    //int count = pag.size();
+    for (int i = 0; i < 256; i++){
         lh-> costo_actual++;
         if(buscar_pagina(y, pagk.pagina[i])){
             return true;
