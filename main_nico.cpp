@@ -47,7 +47,7 @@ public:
             insertInPage(k, y);
         } else {
             // Si la página aún no existe, la creamos
-            insertInPage(k - (1 << t), y);
+            insertInPage(k - (t << t), y);
         }
 
         // Revisamos si se necesita expansión, si es así se expande
