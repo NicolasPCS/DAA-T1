@@ -205,7 +205,7 @@ bool buscar_hash(int y, struct lhashing *lh){
     return false;
 }
 bool pagina_r_libre(vector<Paginas_rebalse> p_r){
-    if(p_r[p_r.size()].pagina_r.size()<128){
+    if(p_r[p_r.size()-1].pagina_r.size()<128){
         return true;
     }
     else{
@@ -239,12 +239,14 @@ void insertar_hash(int y, struct lhashing *lh){
         // La página k se rebalsa, se crea página de rebalse 
         if(pagk.size()==128){
             cout<<"pagk estaba llena\n";
-            if (pag_principal[k].paginas_rebalse.size()>1){
+            if (pag_principal[k].paginas_rebalse.size()>=1){
                 int largo_pag_r=pag_principal[k].paginas_rebalse.size();
                 if(pagina_r_libre(pag_principal[k].paginas_rebalse)){
-                    lh -> paginas_principales[k].paginas_rebalse[largo_pag_r].pagina_r.push_back(y);
+                    cout<<"tengo espacio en pag de rebalse\n";
+                    lh -> paginas_principales[k].paginas_rebalse[largo_pag_r-1].pagina_r.push_back(y);
                     return;
                 }else{
+                    cout<<"no tengo espacio en pag rebalse\n";
                     struct Paginas_rebalse *nueva_rebalse=new Paginas_rebalse;
                     nueva_rebalse->h=pag_principal[k].h;
                     nueva_rebalse->pagina_r.push_back(y);
@@ -253,12 +255,13 @@ void insertar_hash(int y, struct lhashing *lh){
                     return; 
                 }
             }else{
-            struct Paginas_rebalse *nueva_rebalse=new Paginas_rebalse;
-            nueva_rebalse->h=pag_principal[k].h;
-            nueva_rebalse->pagina_r.push_back(y);
-            lh -> paginas_principales[k].paginas_rebalse.push_back(*nueva_rebalse);
-            lh->costo_actual++;
-            return;
+                cout<<"no hay pag de rebalse\n";
+                struct Paginas_rebalse *nueva_rebalse=new Paginas_rebalse;
+                nueva_rebalse->h=pag_principal[k].h;
+                nueva_rebalse->pagina_r.push_back(y);
+                lh -> paginas_principales[k].paginas_rebalse.push_back(*nueva_rebalse);
+                lh->costo_actual++;
+                return;
             }
         }
         // Se inserta en la página k
@@ -288,7 +291,7 @@ void insertar_hash(int y, struct lhashing *lh){
                 if (pag_0.paginas_rebalse.size()>1){
                 int largo_pag_r=pag_0.paginas_rebalse.size();
                     if(pagina_r_libre(pag_0.paginas_rebalse)){
-                        lh -> paginas_principales[k].paginas_rebalse[largo_pag_r].pagina_r.push_back(y);
+                        lh -> paginas_principales[k].paginas_rebalse[largo_pag_r-1].pagina_r.push_back(y);
                         return;
                     }else{
                         struct Paginas_rebalse *nueva_rebalse=new Paginas_rebalse;
@@ -319,7 +322,7 @@ void insertar_hash(int y, struct lhashing *lh){
             if (pag_k_2t.paginas_rebalse.size()>1){
                 int largo_pag_r=pag_k_2t.paginas_rebalse.size();
                 if(pagina_r_libre(pag_k_2t.paginas_rebalse)){
-                    lh -> paginas_principales[k].paginas_rebalse[largo_pag_r].pagina_r.push_back(y);
+                    lh -> paginas_principales[k].paginas_rebalse[largo_pag_r-1].pagina_r.push_back(y);
                     return;
                 }else{
                     struct Paginas_rebalse *nueva_rebalse=new Paginas_rebalse;
@@ -367,16 +370,11 @@ struct lhashing *crear_lhashing(int t,int p){
 
 int main(){
     struct lhashing *lh=crear_lhashing(0,1);
-    for (int i =1; i<130; i++){
+    for (int i =1; i<301; i++){
         cout<<i<<"\n";
         insertar_hash(i,lh);
     }
     cout<<"antes de morir\n";
-    print_hash(lh);
-    insertar_hash(130,lh);
-    cout<<"muere\n";
-    print_hash(lh);
-
-    
+    print_hash(lh);    
     return 0;
 }
