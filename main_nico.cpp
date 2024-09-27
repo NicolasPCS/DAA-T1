@@ -1,185 +1,195 @@
 #include <iostream>
-#include <cstdlib>
-#include <list>
 #include <vector>
-#include <algorithm>
+#include <list>
 #include <cmath>
+#include <cstdlib> // Para rand() y srand()
+#include <ctime>   // Para time()
+
 using namespace std;
 
+// Tamaño máximo de un página en disco -> 1024 byes
+// Un entero del tipo del tipo long long ocupa -> 8 bytes (64 bits) en disco
+const int PAGE_SIZE = 1024 / sizeof(long long);
 
-///////// Creación de estructuras /////////
+// Estructura que representa una página -> Lista de elementos
+struct Page {
+    list <long long> elements;
+    list <long long> overflow;
+};
 
-// Se crea estructura de las páginas
+// Función de hash simple
+// Genera un valor entre 0 y 2^64 - 1
+long long hashFunction(long long y) {
+    const long long prime = 11400714819323198485ull;  // Número primo grande
+    return (y * prime) ^ (y >> 33);
+}
 
-class Página
-{
-private:
-    int h;
+// Clase Hashing Lineal
+class LinearHashing {
+    vector<Page> hashTable; // Tabla de páginas
+    int t;                  // Define el tamaño del hash (2^t)
+    int p;                  // Número de páginas actuales
+    int pageSize;           // Tamaño máximo de la página
+
 public:
-    vector <int> pagina[256];
-    bool buscar(int y);
-    void insertar(int y);
-};
-
-class Pagina_principal: public Página{
-public:
-    vector<class Página> paginas_rebalse;
-};
-
-// Funciones de la Clase Página
-
-bool Página::buscar(int y)
-{
-    int count = pagina.size(); 
-    for (size_t i = 0; i < count; i++)
-    {
-        if (pagina[i] == y){
-            return true;
-        }
-        if (pagina[i] == NULL)
-        {
-            return false;
-        }
-        
+    LinearHashing(int initialPageSize) : pageSize(initialPageSize) {
+        t = 0;
+        p = 1;
+        hashTable.resize(p);
     }
-}
 
-void Página::insertar(int y)
-{
-    int count = pagina.size(); 
-    for (size_t i = 0; i < count; i++)
-    {
-        if (pagina[i] == NULL){
-            pagina[i] = y;
-            break;
+    // Inserta un elemento 'y' en la tabla hash
+    void insert(long long y) {
+        // (1 << (t + 1)) -> Significa que desplazamos el bit 1 't + 1' veces a la izquierda
+        long long k = hashFunction(y) % (1 << (t + 1));
+        if (k < p) {
+            // Si la página k existe, insertamos el elemento
+            insertInPage(k, y);
+        } else {
+            // Si la página aún no existe, la creamos
+            insertInPage(k - (1 << t), y);
         }
-        
-    }
-}
 
-
-
-struct Paginas_rebalse
-{
-    int h;
-    vector <int> pagina[256];
-};
-
-struct Pagina_principal
-{
-    int h;
-    vector <int> pagina[256];
-    vector<struct Paginas_rebalse> paginas_rebalse;
-};
-
-
-// Se crea estructura de la lista de hashing
-struct lhashing
-{
-    int t;
-    int p;
-    int costo_actual;
-    vector<struct Pagina_principal> paginas_principales;
-};
-
-///////// Creación de funciones  /////////
-
-
-// Función de hashing h(y) que debe devolver un valor aleatorio entre 0 y 264 − 1 para cualquier elemento y
-long long h(int y){
-    long long hash = rand() % pow(2,64);
-    return hash;
-}
-
-double porcentaje_llenado(vector<struct Pagina> paginas){
-    return
-}
-
-//Función para buscar en página
-
-bool buscar_pagina(int y, struct ){
-
-}
-
-// Función para ver si un elemento "y" está o no en la lista de hashing "lhashing"
-bool buscar_hash(int y, struct lhashing *lh){
-    vector<struct Pagina_principal> pag_principal = lh -> paginas_principales;
-
-    int k = h(y) % (2^{lhashing.t + 1});
-    
-    // Buscamos en página principal con valor k 
-    Pagina_principal pagk = pag_principal[k];
-    //vector <int> pag[256] = pagk.pagina;
-    //int count = pag.size();
-    for (int i = 0; i < 256; i++){
-        lh-> costo_actual++;
-        if(buscar_pagina(y, pagk.pagina[i])){
-            return true;
+        // Revisamos si se necesita expansión, si es así se expande
+        if (needsExpansion()) {
+            expand();
         }
     }
 
-    // Buscamos en páginas de rebalse asociadas a la página principal con valor k 
-    vector<struct Paginas_rebalse> pag_rebalse = pagk.paginas_rebalse;
+    // Inserta un elemento en una página
+    void insertInPage(int pageIndex, long long y) {
+        // Recorremos toda la lista para verificar si el elemento ya existe
+        for (long long element : hashTable[pageIndex].elements) {
+            if (element == y) {
+                // Si encontramos el elemento, no lo insetamos
+                cout << "Elemento " << y << " ya existe en la página " << pageIndex << endl;
+                return;
+            }
+        }
 
-    //Se ve que existan páginas de rebalse
-    if(pag_rebalse != NULL){
-        int count = pag_rebalse.size();
-        // Se busca en cada página de rebalse
-        for (int i = 0; i < count; i++){
-            lh-> costo_actual++;
-            if(buscar_pagina(y, pag_rebalse[i])){
-                return true;
+        // Verificamos también en la lista de rebalse
+        for (long long element : hashTable[pageIndex].overflow) {
+            if (element == y) {
+                // Si encontramos el elemento, no lo insetamos
+                cout << "Elemento " << y << " ya existe en la lista de rebalse de la página " << pageIndex << endl;
+                return;
+            }
+        }
+
+        // Si el elemento no está, lo insertamos en la página
+        if (hashTable[pageIndex].elements.size() < PAGE_SIZE) {
+            hashTable[pageIndex].elements.push_back(y);
+        } else {
+            // Si la página está llena, lo insertamos en la lista de rebalse
+            hashTable[pageIndex].overflow.push_back(y);
+        }
+    }
+
+    // Verifica si es necesario expandir la tabla hash
+    bool needsExpansion() {
+        return (p >= (1 << t));
+    }
+
+    // Expande la tabla hash
+    void expand() {
+        cout << "Expandiendo la tabla hash..." << endl;
+        // Añadimos una nueva página y redistribuimos los elementos
+        hashTable.push_back(Page());
+
+        int oldPageIndex = p - (1 << t);
+
+        if (oldPageIndex < hashTable.size() && p < hashTable.size()) {
+            redistribute(oldPageIndex, p);
+        } else {
+            cout << "Error: Índices fuera de los límites durante la expansión." << endl;
+            return;
+        }
+
+        p++;
+
+        if (p > (1 << (t + 1))) {
+            cout << "Error: Expansión incorrecta. P: " << p << ", t: " << t << endl;
+            return;
+        }
+
+        if (p == (1 << (t + 1))) {
+            t++; // Incrementamos el exponente t cuando p = 2^(t+1)
+        }
+    }
+
+    // Redistribuye los elementos entre dos páginas
+    void redistribute(int oldPageIndex, int newPageIndex) {
+        if (oldPageIndex >= hashTable.size()) {
+            cout << "Error: El índice de la página vieja está fuera de los límites." << endl;
+            return;
+        }
+
+        if (newPageIndex >= hashTable.size()) {
+            cout << "Error: El índice de la nueva página está fuera de los límites." << endl;
+            return;
+        }
+
+        list<long long> temp;
+        // Recorremos la página y redistribuimos los elementos en base al nuevo valor hash.
+        for (long long y : hashTable[oldPageIndex].elements) {
+            long long k = hashFunction(y) % (1 << (t + 1));
+            if (k == newPageIndex) {
+                hashTable[newPageIndex].elements.push_back(y);
+            } else {
+                temp.push_back(y);
+            }
+        }
+        hashTable[oldPageIndex].elements = temp;
+
+        // También redistribuimos los elementos de la lista de rebalse
+        list<long long> tempOverflow;
+        for (long long y : hashTable[oldPageIndex].overflow) {
+            long long k = hashFunction(y) % (1 << (t + 1));
+            if (k == newPageIndex) {
+                hashTable[newPageIndex].elements.push_back(y);
+            } else {
+                tempOverflow.push_back(y);
+            }
+        }
+        hashTable[oldPageIndex].overflow = tempOverflow;
+    }
+
+    // Imprimir tabla hash
+    void printHashTable() {
+        for (int i = 0; i < p; i++) {
+            cout << "Página " << i << ": ";
+            for (long long y : hashTable[i].elements) {
+                cout << y << " ";
+            }
+            cout << endl;
+
+            if (!hashTable[i].overflow.empty()) {
+                cout << "  Lista de rebalse: ";
+                for (long long y : hashTable[i].overflow) {
+                    cout << y << " ";
+                }
+                cout << endl;
             }
         }
     }
-    //No se encontró el elemento y 
-    return false
-}
+};
 
-// Función que inserta un elemento en la lista de hashing cuando este no se encuentre
-void insertar_hash(int y, struct lhashing *lh, int costo_promedio){
-    vector<vector <int>[256]> pag_principal = lh -> paginas_principales;
-    // Se encuentra que el elemento "y" ya está
-    if(buscar_hash(y, lh)){
-        
+int main() {
+    // Inicializamos la semilla para la función rand()
+    srand(time(0));
+
+    int N = 100; // Número de elementos a insertar
+    LinearHashing hashTable(PAGE_SIZE);
+
+    // Insertamos N elementos en la tabla hash
+    for (int i = 0; i < N; i++) {
+        long long y = rand() % 1000000; // Generamos un número aleatorio de 64 bits
+        cout << "Insertando " << y << endl;
+        hashTable.insert(y);
     }
 
-    // El elemento "y" no se encuentra, se busca donde insertarlo
+    // Imprimimos la tabla hash
+    hashTable.printHashTable();
 
-    int k = h(y) % (2^{lhashing.t + 1});
-
-    // Página ya existe
-    if(k < (lh -> p)){
-
-        vector <int>[256] pagk = pag_principal[k];
-
-        // La página k se rebalsa, se crea página de rebalse 
-        if(pag_principal[k].tail() != NULL){
-            Pagina *nueva_rebalse;
-
-            nueva_rebalse -> pagina.push(y);
-            lh.paginas_rebalse.push(nueva_rebalse);
-            lh.costo_actual++;
-        }
-        // Se inserta en la página k
-        else{
-
-        }
-    }
-
-    // La página k aún no ha sido creada, por lo cual se debe insertar en la página k − 2t.
-    else{
-
-
-    }
-    
-}
-
-
-///////// Main /////////
-
-int main()
-{
-    std::cout << "Hola mundo!" << std::endl;
     return 0;
 }
