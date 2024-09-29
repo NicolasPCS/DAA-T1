@@ -4,14 +4,14 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "E:\\Archivos de Programa\\TDM-GCC-64\\include"
+                "C:\\TDM-GCC-64\\include"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "E:\\Archivos de Programa\\TDM-GCC-64\\bin\\g++.exe",
+            "compilerPath": "C:\\TDM-GCC-64\\bin\\g++.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "gcc-x64"
