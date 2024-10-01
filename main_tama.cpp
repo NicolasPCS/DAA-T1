@@ -276,9 +276,11 @@ void insertar_hash(int y, struct HashingLineal *lh, int cmax)
         // Caso contrario, se calcula 'k' como el hash del valor 'y' módulo 2^(t+1)
         else
         {
+            cout << "valor de h(y)" << h(y) << "\n";
             k = h(y) % (long long)pow(2, lh->t + 1);
         }
 
+        
         // Si k < p, se inserta en la página k (o en una nueva si la actual rebalsa)
         if (k < (lh->p))
         {
@@ -424,7 +426,19 @@ int main()
     struct HashingLineal *lh = crear_HashingLineal(0, 1);
     for (int i = 1; i < pow(2,10); i++)
     {
-        insertar_hash(i, lh, 3);
+        insertar_hash(i, lh, 2000);
+        insertar_hash(i, lh, 2000);
+    }
+    for (int i = 1; i < 10; i++)
+    {
+        long long hash = h(i);
+        cout << "valor de hashing: " << hash << "\n";
+    }
+    cout << "Nuevo hashing: " << "\n";
+    for (int i = 1; i < 10; i++)
+    {
+        long long hash = h(i);
+        cout << "valor de hashing: " << hash << "\n";
     }
     print_hash(lh);
     return 0;
