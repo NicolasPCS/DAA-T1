@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <ctime>
 
 using namespace std;
 
@@ -28,6 +29,7 @@ struct HashingLineal
 {
     int t;
     int p;
+    int semilla_h;
     int costo_actual;
     int cant_elementos_insert;
     vector<struct PaginaPrincipal> paginas_principales;
@@ -37,8 +39,9 @@ struct HashingLineal
 
 // Función de hashing h(y)
 // Devuelve un valor aleatorio entre 0 y 264 − 1 para cualquier elemento 'y'
-long long h(int y)
+long long h(int y, int semilla)
 {
+    srand(semilla);
     double d = pow(2, 64);
     srand(y);
     long long hash = fmod(rand(), d);
@@ -276,8 +279,8 @@ void insertar_hash(int y, struct HashingLineal *lh, int cmax)
         // Caso contrario, se calcula 'k' como el hash del valor 'y' módulo 2^(t+1)
         else
         {
-            cout << "valor de h(y)" << h(y) << "\n";
-            k = h(y) % (long long)pow(2, lh->t + 1);
+            cout << "valor de h(y)" << h(y,lh->semilla_h) << "\n";
+            k = h(y,lh->semilla_h) % (long long)pow(2, lh->t + 1);
         }
 
         
@@ -405,9 +408,11 @@ void insertar_hash(int y, struct HashingLineal *lh, int cmax)
 // Función aux: Crea un HashingLineal con t y p paginas
 struct HashingLineal *crear_HashingLineal(int t, int p)
 {
+    int s= rand();
     struct HashingLineal *lh = new HashingLineal;
     lh->t = t;
     lh->p = p;
+    lh->semilla_h=s;
     lh->costo_actual = 0;
     lh->cant_elementos_insert = 0;
     vector<struct PaginaPrincipal> pag_princ;
@@ -424,6 +429,9 @@ struct HashingLineal *crear_HashingLineal(int t, int p)
 int main()
 {
     struct HashingLineal *lh = crear_HashingLineal(0, 1);
+    cout<<"lh "<<lh->semilla_h<<" ";
+    struct HashingLineal *lh1 = crear_HashingLineal(0, 1);
+    cout<<"lh1 "<<lh->semilla_h;
     for (int i = 1; i < pow(2,10); i++)
     {
         insertar_hash(i, lh, 2000);
@@ -431,15 +439,15 @@ int main()
     }
     for (int i = 1; i < 10; i++)
     {
-        long long hash = h(i);
+        long long hash = h(i,lh->semilla_h);
         cout << "valor de hashing: " << hash << "\n";
     }
     cout << "Nuevo hashing: " << "\n";
     for (int i = 1; i < 10; i++)
     {
-        long long hash = h(i);
+        long long hash = h(i,lh1->semilla_h);
         cout << "valor de hashing: " << hash << "\n";
     }
-    print_hash(lh);
+    //print_hash(lh);
     return 0;
 }
