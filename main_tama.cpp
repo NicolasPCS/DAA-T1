@@ -6,6 +6,7 @@
 #include <cmath>
 #include <memory>
 #include <ctime>
+#include <random> 
 
 using namespace std;
 
@@ -43,8 +44,7 @@ long long h(int y, int semilla)
 {
     srand(semilla);
     double d = pow(2, 64);
-    srand(y);
-    long long hash = fmod(rand(), d);
+    long long hash = fmod(rand() * y, d);
     return hash;
 }
 
@@ -408,7 +408,11 @@ void insertar_hash(int y, struct HashingLineal *lh, int cmax)
 // Función aux: Crea un HashingLineal con t y p paginas
 struct HashingLineal *crear_HashingLineal(int t, int p)
 {
-    int s= rand();
+    // Generar una semilla aleatoria usando random_device y mt19937_64
+    std::random_device rd; // Genera un número aleatorio basado en el hardware
+    std::mt19937_64 rng(rd()); // Usa random_device como semilla para mt19937_64
+    int s = rng();  // Generar un número aleatorio de 64 bits para la semilla
+
     struct HashingLineal *lh = new HashingLineal;
     lh->t = t;
     lh->p = p;
@@ -429,9 +433,8 @@ struct HashingLineal *crear_HashingLineal(int t, int p)
 int main()
 {
     struct HashingLineal *lh = crear_HashingLineal(0, 1);
-    cout<<"lh "<<lh->semilla_h<<" ";
+    cout<<"lh "<<lh->semilla_h<<"\n";
     struct HashingLineal *lh1 = crear_HashingLineal(0, 1);
-    cout<<"lh1 "<<lh->semilla_h;
     for (int i = 1; i < pow(2,10); i++)
     {
         insertar_hash(i, lh, 2000);
@@ -442,11 +445,25 @@ int main()
         long long hash = h(i,lh->semilla_h);
         cout << "valor de hashing: " << hash << "\n";
     }
+    cout<<"Reimpresion lh, semilla "<< lh->semilla_h<<"\n";
+    
+    for (int i = 1; i < 10; i++)
+    {
+        long long hash = h(i,lh->semilla_h);
+        cout << "valor de hashing: " << hash << "\n";
+    }
     cout << "Nuevo hashing: " << "\n";
+    cout<<"lh1 "<<lh1->semilla_h<<"\n";
     for (int i = 1; i < 10; i++)
     {
         long long hash = h(i,lh1->semilla_h);
-        cout << "valor de hashing: " << hash << "\n";
+        cout << "valor de hashing lh1: " << hash << "\n";
+    }
+    cout<<"Reimpresion lh1, semilla "<< lh1->semilla_h<<"\n";
+    for (int i = 1; i < 10; i++)
+    {
+        long long hash = h(i,lh1->semilla_h);
+        cout << "valor de hashing lh1: " << hash << "\n";
     }
     //print_hash(lh);
     return 0;
