@@ -160,7 +160,7 @@ bool buscar_val_vec_pagina_r(struct HashingLineal *lh, int y, vector<struct Pagi
     return false;
 }
 
-// Función aux: Busca un elemento 'y' en una pagina principal
+// Función aux: Busca un elemento 'y' en una pagina principal k 
 bool buscar_val_vec_pagina_p(struct HashingLineal *lh, int y, PaginaPrincipal pp)
 {
     vector<struct PaginaRebalse> pr = pp.paginas_rebalse;
@@ -173,28 +173,24 @@ bool buscar_val_vec_pagina_p(struct HashingLineal *lh, int y, PaginaPrincipal pp
                                            // se busca en las paginas de rebalse
 }
 
-// Función aux: Busca un elemento "y" en la lista de hashing "HashingLineal"
-bool buscar_hash(int y, struct HashingLineal *lh)
+// Función aux: Busca un elemento "y" en la página k del hashing "HashingLineal"
+bool buscar_hash(int y, struct HashingLineal *lh, int k)
 {
     vector<struct PaginaPrincipal> pag_principal = lh->paginas_principales;
-    
+    PaginaPrincipal pagk = pag_principal[k];
+    lh->costo_actual++;
 
     if (pag_principal.size() < 1)
     {
         return false;
     }
-    for (int i = 0; i < pag_principal.size(); i++)
+    if (buscar_val_vec_pagina_p(lh,y, pagk))
     {
-        PaginaPrincipal pagk = pag_principal[i];
-        // cout << "dentro del for\n";
-        lh->costo_actual++;
-        
-        if (buscar_val_vec_pagina_p(lh,y, pagk))
-        {
-            return true;
-        }
+        return true;
     }
-    return false;
+    else{
+        return false;
+    }
 }
 
 // Función aux: Verifica si una página de rebalse tiene espacio para un nuevo elemento
