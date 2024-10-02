@@ -431,7 +431,7 @@ int main()
     struct HashingLineal *lh = crear_HashingLineal(0, 1);
     cout<<"lh "<<lh->semilla_h<<" ";
     struct HashingLineal *lh1 = crear_HashingLineal(0, 1);
-    cout<<"lh1 "<<lh->semilla_h;
+    cout<<"lh1 "<<lh1->semilla_h;
     for (int i = 1; i < pow(2,10); i++)
     {
         insertar_hash(i, lh, 2000);
