@@ -67,24 +67,6 @@ int posicion_vacia(vector<int> v)
     return -1;
 }
 
-// Función aux: Entrega la ultima posicion vacia de la pagina de rebalse i
-/* vector<int> pag_r_y_posicion(vector<struct PaginaRebalse> v_pagR)
-{
-    vector<int> v = {-1, -1};
-    for (int i = 0; i < v_pagR.size(); i++) // Tamaño de la lista de la página de rebalse 'v_pagR'
-    {
-        struct PaginaRebalse v_pagR_i = v_pagR[i]; // Se obtiene la posición i de la página de rebalse
-        int pos = posicion_vacia(v_pagR_i.pagina_rebalse);
-        if (pos != -1)
-        {
-            v[0] = i;
-            v[1] = pos;
-            return v;
-        }
-    }
-    return v;
-} */
-
 // Función aux: Imprime un vector de int
 void print_vector(vector<int> v)
 {
@@ -107,11 +89,11 @@ double porcentaje_llenado_pagina(vector<int> pag){
     }
 }
 
-double porcentaje_llenado_ultp = 0;
-
 // Función aux: Imprime un vector de páginas pricipales y sus páginas de rebalse
 void print_paginas(vector<struct PaginaPrincipal> p, int np)
 {
+    double porcentaje_llenado_ultp = 0;
+
     for (int i = 0; i < np; i++)
     {
         struct PaginaPrincipal pag_p = p[i];
@@ -493,71 +475,95 @@ int main2()
     return 0;
 }
 
-// Función aux: Agrega valores al vector que almacena costos reales y controlados
-void agregar_vals_vec1(int exponente, int costo_real, int cmax){
-    // Crear dos vectores para almacenar exponentes, costos reales y costos controlados
-    std::vector<int> exponentes;              // Vector de exponentes
-    std::vector<int> costosReales;            // Vector de costos reales
-    std::vector<int> costosControlados;       // Vector de costos controlados
-
-    exponentes.push_back(exponente);
-    costosReales.push_back(exponente);
-    costosControlados.push_back(exponente);
-
-    for (size_t i = 0; i < exponentes.size(); ++i) {
-        std::cout << exponentes[i] << " ";
-        std::cout << costosReales[i] << " ";
-        std::cout << costosControlados[i] << " ";
-    }
-}
-
-// Función aux: Agrega valores al vector que almacena el porcentaje de llenado de las páginas y el costo promedio real
-void agregar_vals_vec2(int exponente, double porcentaje_llenado, int costo_real) {
-    
-}
-
 int main()
 {
     srand(static_cast<unsigned int>(time(0)));
-    
+
+    string str_exponente = "Exponente: ";
+    string str_creal = "C_Real: ";
+    string str_cmax = "C_Controlado: ";
+    string str_pllenado = "Porcentaje de llenado: ";
+
     int base = 2;
     int exponente = 10;
     int cmax = 1000;
     int costo_prom_real = 0;
+    double porcentaje_llenado_ultp = 0;
+    double prom_porcentaje_llenado = 0;
+    vector<double> porcentajes_llenado;
 
     do {
         struct HashingLineal *lh = crear_HashingLineal(0, 1);
+        prom_porcentaje_llenado = 0;
+        porcentaje_llenado_ultp = 0;
+        porcentajes_llenado = {};
 
         for (int i = 1; i < pow(base,exponente); i++)
         {
             insertar_hash(i, lh, cmax);
         }
 
+        vector<struct PaginaPrincipal> p = lh->paginas_principales;
+        int np = lh->p;
+
+        for (int i = 0; i < np; i++) {
+            struct PaginaPrincipal pag_pr = p[i];
+
+            // Si tiene páginas de rebalse
+            if (pag_pr.pagina_principal.size() == 128) {
+                vector<struct PaginaRebalse> pags_re = pag_pr.paginas_rebalse;
+
+                for (int j = 0; j < pags_re.size(); j++) {
+                    struct PaginaRebalse pagina_rebalse = pags_re[j];
+                    porcentaje_llenado_ultp = porcentaje_llenado_pagina(pagina_rebalse.pagina_rebalse);
+                }
+            } else { // No tiene página de rebalse, nos quedamos con el % de la Página principal
+                porcentaje_llenado_ultp = porcentaje_llenado_pagina(pag_pr.pagina_principal);
+            }
+
+            // Agregar a lista y calcular promedio
+            porcentajes_llenado.push_back(porcentaje_llenado_ultp);
+            porcentaje_llenado_ultp = 0;
+        }
+
+        porcentaje_llenado_ultp = 0;
+        prom_porcentaje_llenado = 0;
+
+        // Calculo promedio de porcenjaje de llenado
+        for (int i = 0; i < porcentajes_llenado.size(); i++)
+        {
+            porcentaje_llenado_ultp += porcentajes_llenado[i];
+        }
+
+        prom_porcentaje_llenado = porcentaje_llenado_ultp / np;
+
         costo_prom_real = ((lh->costo_actual) / (lh->cant_elementos_insert));
 
-        // Agregar valores al vector que almacena costos reales y controlados
-        agregar_vals_vec1(exponente, costo_prom_real, cmax);
-
-        // Agregar valores al vector que almacena el porcentaje de llenado de las páginas y el costo promedio real
-        agregar_vals_vec2(exponente, porcentaje_llenado_ultp, costo_prom_real);
+        str_exponente += to_string(exponente) + ", ";
+        str_creal += to_string(costo_prom_real) + ", ";
+        str_cmax += to_string(cmax) + ", ";
+        cout << "Hola : " << prom_porcentaje_llenado << endl;
+        str_pllenado += to_string(prom_porcentaje_llenado) + "%, ";
 
         //print_hash(lh);
+        //cout << "Aqui acaba \n\n\n\n\n\n" << endl;
         delete lh;
+        
+        exponente += 1;
+    } while (exponente <= 12);
 
-        exponente += 2;
-    } while (exponente <= 14);
+    str_exponente.erase(str_exponente.size() - 2);
+    str_creal.erase(str_creal.size() - 2);
+    str_cmax.erase(str_cmax.size() - 2);
+    str_pllenado.erase(str_pllenado.size() - 2);
 
-    // Realizar variaciones en el costo promedio - Cmax
-    // - Imprimir costo real -> costo_actual / cantidad de elementos insertados ((lh ->costo_actual) / (lh ->cant_elementos_insert))
-    // - Imprimir costo controlado
-    // Como varía el costo primedio real cuando cambia Cmax
-    // Porcentaje de llenado
+    cout << str_exponente << "\n"
+         << str_creal << "\n"
+         << str_cmax << "\n\n";
 
+    cout << str_exponente << "\n"
+         << str_pllenado << "\n"
+         << str_creal << "\n";
 
-    // Promedio de llenado de las paginas - ultimo porcentaje y ademas el promedio
-
-    // print_hash(lh);
-
-    // delete lh;
     return 0;
 }
