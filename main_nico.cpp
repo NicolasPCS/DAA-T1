@@ -550,7 +550,7 @@ int main()
         delete lh;
         
         exponente += 1;
-    } while (exponente <= 12);
+    } while (exponente <= 24);
 
     str_exponente.erase(str_exponente.size() - 2);
     str_creal.erase(str_creal.size() - 2);
