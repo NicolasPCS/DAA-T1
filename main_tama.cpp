@@ -231,9 +231,24 @@ void crear_pagina_principal(struct HashingLineal *lh)
 void insertar_hash(int y, struct HashingLineal *lh, int cmax)
 {
     vector<struct PaginaPrincipal> pag_principal = lh->paginas_principales;
+    int k;
+
+    // Si el elemento "y" no se encuentra, se busca donde insertarlo
+    // Si el tamaño principal es menor que 2, se asigna el índice 'k' como 0
+    if (pag_principal.size() < 2)
+    {
+        k = 0;
+    }
+
+    // Caso contrario, se calcula 'k' como el hash del valor 'y' módulo 2^(t+1)
+    else
+    {
+        cout << "valor de h(y)" << h(y,lh->semilla_h) << "\n";
+        k = h(y,lh->semilla_h) % (long long)pow(2, lh->t + 1);
+        }
 
     // Buscar si el elemento "y" ya existe en la tabla de hashing
-    if (buscar_hash(y, lh))
+    if (buscar_hash(y, lh,k))
     {   
         lh->cant_elementos_insert++;
         // cout << "y ya existe\n";
@@ -431,6 +446,10 @@ int main()
     struct HashingLineal *lh = crear_HashingLineal(0, 1);
     cout<<"lh "<<lh->semilla_h<<"\n";
     struct HashingLineal *lh1 = crear_HashingLineal(0, 1);
+//<<<<<<< HEAD
+    cout<<"lh1 "<<lh1->semilla_h;
+//=======
+//>>>>>>> 8efb0308345b4cac9184b22ba67a5379d1b11e01
     for (int i = 1; i < pow(2,10); i++)
     {
         insertar_hash(i, lh, 2000);
