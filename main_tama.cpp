@@ -6,6 +6,7 @@
 #include <cmath>
 #include <memory>
 #include <ctime>
+#include <random> 
 
 using namespace std;
 
@@ -43,8 +44,7 @@ long long h(int y, int semilla)
 {
     srand(semilla);
     double d = pow(2, 64);
-    srand(y);
-    long long hash = fmod(rand(), d);
+    long long hash = fmod(rand() * y, d);
     return hash;
 }
 
@@ -160,7 +160,7 @@ bool buscar_val_vec_pagina_r(struct HashingLineal *lh, int y, vector<struct Pagi
     return false;
 }
 
-// Función aux: Busca un elemento 'y' en una pagina principal
+// Función aux: Busca un elemento 'y' en una pagina principal k 
 bool buscar_val_vec_pagina_p(struct HashingLineal *lh, int y, PaginaPrincipal pp)
 {
     vector<struct PaginaRebalse> pr = pp.paginas_rebalse;
@@ -173,28 +173,24 @@ bool buscar_val_vec_pagina_p(struct HashingLineal *lh, int y, PaginaPrincipal pp
                                            // se busca en las paginas de rebalse
 }
 
-// Función aux: Busca un elemento "y" en la lista de hashing "HashingLineal"
-bool buscar_hash(int y, struct HashingLineal *lh)
+// Función aux: Busca un elemento "y" en la página k del hashing "HashingLineal"
+bool buscar_hash(int y, struct HashingLineal *lh, int k)
 {
     vector<struct PaginaPrincipal> pag_principal = lh->paginas_principales;
-    
+    PaginaPrincipal pagk = pag_principal[k];
+    lh->costo_actual++;
 
     if (pag_principal.size() < 1)
     {
         return false;
     }
-    for (int i = 0; i < pag_principal.size(); i++)
+    if (buscar_val_vec_pagina_p(lh,y, pagk))
     {
-        PaginaPrincipal pagk = pag_principal[i];
-        // cout << "dentro del for\n";
-        lh->costo_actual++;
-        
-        if (buscar_val_vec_pagina_p(lh,y, pagk))
-        {
-            return true;
-        }
+        return true;
     }
-    return false;
+    else{
+        return false;
+    }
 }
 
 // Función aux: Verifica si una página de rebalse tiene espacio para un nuevo elemento
@@ -235,9 +231,24 @@ void crear_pagina_principal(struct HashingLineal *lh)
 void insertar_hash(int y, struct HashingLineal *lh, int cmax)
 {
     vector<struct PaginaPrincipal> pag_principal = lh->paginas_principales;
+    int k;
+
+    // Si el elemento "y" no se encuentra, se busca donde insertarlo
+    // Si el tamaño principal es menor que 2, se asigna el índice 'k' como 0
+    if (pag_principal.size() < 2)
+    {
+        k = 0;
+    }
+
+    // Caso contrario, se calcula 'k' como el hash del valor 'y' módulo 2^(t+1)
+    else
+    {
+        cout << "valor de h(y)" << h(y,lh->semilla_h) << "\n";
+        k = h(y,lh->semilla_h) % (long long)pow(2, lh->t + 1);
+        }
 
     // Buscar si el elemento "y" ya existe en la tabla de hashing
-    if (buscar_hash(y, lh))
+    if (buscar_hash(y, lh,k))
     {   
         lh->cant_elementos_insert++;
         // cout << "y ya existe\n";
@@ -408,7 +419,11 @@ void insertar_hash(int y, struct HashingLineal *lh, int cmax)
 // Función aux: Crea un HashingLineal con t y p paginas
 struct HashingLineal *crear_HashingLineal(int t, int p)
 {
-    int s= rand();
+    // Generar una semilla aleatoria usando random_device y mt19937_64
+    std::random_device rd; // Genera un número aleatorio basado en el hardware
+    std::mt19937_64 rng(rd()); // Usa random_device como semilla para mt19937_64
+    int s = rng();  // Generar un número aleatorio de 64 bits para la semilla
+
     struct HashingLineal *lh = new HashingLineal;
     lh->t = t;
     lh->p = p;
@@ -429,9 +444,12 @@ struct HashingLineal *crear_HashingLineal(int t, int p)
 int main()
 {
     struct HashingLineal *lh = crear_HashingLineal(0, 1);
-    cout<<"lh "<<lh->semilla_h<<" ";
+    cout<<"lh "<<lh->semilla_h<<"\n";
     struct HashingLineal *lh1 = crear_HashingLineal(0, 1);
+//<<<<<<< HEAD
     cout<<"lh1 "<<lh1->semilla_h;
+//=======
+//>>>>>>> 8efb0308345b4cac9184b22ba67a5379d1b11e01
     for (int i = 1; i < pow(2,10); i++)
     {
         insertar_hash(i, lh, 2000);
@@ -442,11 +460,25 @@ int main()
         long long hash = h(i,lh->semilla_h);
         cout << "valor de hashing: " << hash << "\n";
     }
+    cout<<"Reimpresion lh, semilla "<< lh->semilla_h<<"\n";
+    
+    for (int i = 1; i < 10; i++)
+    {
+        long long hash = h(i,lh->semilla_h);
+        cout << "valor de hashing: " << hash << "\n";
+    }
     cout << "Nuevo hashing: " << "\n";
+    cout<<"lh1 "<<lh1->semilla_h<<"\n";
     for (int i = 1; i < 10; i++)
     {
         long long hash = h(i,lh1->semilla_h);
-        cout << "valor de hashing: " << hash << "\n";
+        cout << "valor de hashing lh1: " << hash << "\n";
+    }
+    cout<<"Reimpresion lh1, semilla "<< lh1->semilla_h<<"\n";
+    for (int i = 1; i < 10; i++)
+    {
+        long long hash = h(i,lh1->semilla_h);
+        cout << "valor de hashing lh1: " << hash << "\n";
     }
     //print_hash(lh);
     return 0;
