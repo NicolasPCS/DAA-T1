@@ -318,6 +318,22 @@ void insertar_hash(int y, struct HashingLineal *lh, int cmax)
         lh->costo_actual=costo_act-costo_n;
         insertar_hash(y,lh,cmax);
         return;   
+        int costo_act=lh ->costo_actual;
+        int cnt_elem=lh->cant_elementos_insert;
+        lh=Expancion_Hash(lh,k,&elem);
+        elem.push_back(y);
+        //cout<<"Se expandio -> "<<costo_act <<" elementos= "<<cnt_elem<<"\n";
+        for(int i=0;i<elem.size();i++){
+            insertar_hash(elem[i],lh,cmax);
+        }
+
+        if((lh ->p ) == (pow(2, lh->t+1)))
+        {
+            lh->t++;
+        }
+        lh->cant_elementos_insert=cnt_elem + 1;
+        int costo_n=lh->costo_actual;
+        lh->costo_actual=costo_act-costo_n;
     }
     
     else{

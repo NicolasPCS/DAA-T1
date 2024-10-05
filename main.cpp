@@ -248,6 +248,7 @@ struct HashingLineal *crear_pagina_principal(struct HashingLineal *lh)
     //cout<<"Crear pag principal\n";
     struct PaginaPrincipal *nueva_principal = new PaginaPrincipal;
     lh->paginas_principales.push_back(*nueva_principal);
+    lh->costo_actual++;
     lh->p++;
     return lh;
 };
@@ -267,6 +268,7 @@ void crear_pagina_rebalse(struct HashingLineal *lh, int y, int k)
     //cout<<"crear_pagina_rebalse\n";
     struct PaginaRebalse *nueva_rebalse = new PaginaRebalse;
     nueva_rebalse->pagina_rebalse.push_back(y);
+    lh->costo_actual++;
     lh->paginas_principales[k].paginas_rebalse.push_back(*nueva_rebalse);
     lh->costo_actual++;
     lh->cant_elementos_insert++;
@@ -309,20 +311,18 @@ void insertar_hash(int y, struct HashingLineal *lh, int cmax)
         int costo_act=lh ->costo_actual;
         int cnt_elem=lh->cant_elementos_insert;
         lh=Expancion_Hash(lh,k,&elem);
-        elem.push_back(y);
-        //cout<<"Se expandio -> "<<costo_act <<" elementos= "<<cnt_elem<<"\n";
         for(int i=0;i<elem.size();i++){
             insertar_hash(elem[i],lh,cmax);
         }
-
         if((lh ->p ) == (pow(2, lh->t+1)))
         {
             lh->t++;
         }
-        lh->cant_elementos_insert=cnt_elem + 1;
+        lh->cant_elementos_insert=cnt_elem;
         int costo_n=lh->costo_actual;
         lh->costo_actual=costo_act-costo_n;
-        return;   
+        insertar_hash(y,lh,cmax);
+        return; 
     }
     
     else{
@@ -381,44 +381,7 @@ void insertar_hash(int y, struct HashingLineal *lh, int cmax)
         // Si k >= p, la página k aún no ha sido creada, por lo cual se debe insertar en la página k − 2^t.
         else
         {
-            int posicion = k - pow(2,(lh->t));
-            // if (posicion < 0)
-            // {
-            //     struct PaginaPrincipal pag_0 = pag_principal[0];
-            //     vector<int> pag_pag_0 = pag_0.pagina_principal;
-            //     int pos_i = posicion_vacia(pag_pag_0);
-            //     if (pos_i < PAGE_SIZE)
-            //     {
-            //         lh->paginas_principales[0].pagina_principal.push_back(y);
-            //         lh->costo_actual++;
-            //         lh->cant_elementos_insert++;
-            //         return;
-            //     }
-            //     else
-            //     {
-            //         if (pag_0.paginas_rebalse.size() > 1)
-            //         {
-            //             int largo_pag_r = pag_0.paginas_rebalse.size();
-            //             if (pagina_rebalse_libre(pag_0.paginas_rebalse))
-            //             {
-            //                 lh->paginas_principales[k].paginas_rebalse[largo_pag_r - 1].pagina_rebalse.push_back(y);
-            //                 lh->cant_elementos_insert++;
-            //                 return;
-            //             }
-            //             else
-            //             {
-            //                 crear_pagina_rebalse(lh, y, k);
-            //                 return;
-            //             }
-            //         }
-            //         else
-            //         {
-            //             crear_pagina_rebalse(lh, y, k);
-            //             return;
-            //         }
-            //     }
-            // }
-            
+            int posicion = k - pow(2,(lh->t));            
             struct PaginaPrincipal pag_k_2t = pag_principal[posicion];
             vector<int> pag_pag_k_2t = pag_k_2t.pagina_principal;
             int pos_i = posicion_vacia(pag_pag_k_2t);
@@ -473,7 +436,7 @@ int main()
 
     int base = 2;
     int exponente = 10;
-    int cmax = 2;
+    int cmax = 6;
     int costo_prom_real = 0;
     double porcentaje_llenado_ultp = 0;
     double prom_porcentaje_llenado = 0;
@@ -533,7 +496,7 @@ int main()
 
         delete lh;
         exponente += 1;
-    } while (exponente <= 24);
+    } while (exponente <= 17);
 
     str_exponente.erase(str_exponente.size() - 2);
     str_creal.erase(str_creal.size() - 2);
