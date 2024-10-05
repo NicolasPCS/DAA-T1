@@ -1,195 +1,563 @@
 #include <iostream>
-#include <vector>
+#include <cstdlib>
 #include <list>
+#include <vector>
+#include <algorithm>
 #include <cmath>
-#include <cstdlib> // Para rand() y srand()
-#include <ctime>   // Para time()
+#include <memory>
+#include <ctime>
+
+#include <map>
+#include <utility> // Para std::pair
 
 using namespace std;
 
-// Tamaño máximo de un página en disco -> 1024 byes
-// Un entero del tipo del tipo long long ocupa -> 8 bytes (64 bits) en disco
-const int PAGE_SIZE = 1024 / sizeof(long long);
+//-- Definición de estructuras --//
 
-// Estructura que representa una página -> Lista de elementos
-struct Page {
-    list <long long> elements;
-    list <long long> overflow;
+// Estructura de una página
+struct PaginaPrincipal
+{
+    vector<int> pagina_principal;
+    vector<struct PaginaRebalse> paginas_rebalse;
 };
 
-// Función de hash simple
-// Genera un valor entre 0 y 2^64 - 1
-long long hashFunction(long long y) {
-    const long long prime = 11400714819323198485ull;  // Número primo grande
-    return (y * prime) ^ (y >> 33);
+// Estructura de páginas de rebalse
+struct PaginaRebalse
+{
+    vector<int> pagina_rebalse;
+};
+
+// Estructura de la lista de hashing
+struct HashingLineal
+{
+    int t;
+    int p;
+    int semilla_h;
+    int costo_actual;
+    int cant_elementos_insert;
+    vector<struct PaginaPrincipal> paginas_principales;
+};
+
+//-- Implementación de funciones --//
+
+// Función de hashing h(y)
+// Devuelve un valor aleatorio entre 0 y 264 − 1 para cualquier elemento 'y'
+long long h(int y, int semilla)
+{
+    srand(semilla);
+    double d = pow(2, 64);
+    long long hash = fmod(rand() * y, d);
+    return hash;
 }
 
-// Clase Hashing Lineal
-class LinearHashing {
-    vector<Page> hashTable; // Tabla de páginas
-    int t;                  // Define el tamaño del hash (2^t)
-    int p;                  // Número de páginas actuales
-    int pageSize;           // Tamaño máximo de la página
+// double porcentaje_llenado(vector<struct Pagina> paginas){
+//     return
+// }
 
-public:
-    LinearHashing(int initialPageSize) : pageSize(initialPageSize) {
-        t = 0;
-        p = 1;
-        hashTable.resize(p);
-    }
-
-    // Inserta un elemento 'y' en la tabla hash
-    void insert(long long y) {
-        // (1 << (t + 1)) -> Significa que desplazamos el bit 1 't + 1' veces a la izquierda
-        long long k = hashFunction(y) % (1 << (t + 1));
-        if (k < p) {
-            // Si la página k existe, insertamos el elemento
-            insertInPage(k, y);
-        } else {
-            // Si la página aún no existe, la creamos
-            insertInPage(k - (1 << t), y);
-        }
-
-        // Revisamos si se necesita expansión, si es así se expande
-        if (needsExpansion()) {
-            expand();
+// Función aux: Encuentra la ultima posicion vacía de un vector de int
+int posicion_vacia(vector<int> v)
+{
+    for (int i = 0; i < 1023; i++)
+    {
+        if (v[i] == NULL)
+        {
+            return i;
         }
     }
+    return -1;
+}
 
-    // Inserta un elemento en una página
-    void insertInPage(int pageIndex, long long y) {
-        // Recorremos toda la lista para verificar si el elemento ya existe
-        for (long long element : hashTable[pageIndex].elements) {
-            if (element == y) {
-                // Si encontramos el elemento, no lo insetamos
-                cout << "Elemento " << y << " ya existe en la página " << pageIndex << endl;
-                return;
-            }
-        }
-
-        // Verificamos también en la lista de rebalse
-        for (long long element : hashTable[pageIndex].overflow) {
-            if (element == y) {
-                // Si encontramos el elemento, no lo insetamos
-                cout << "Elemento " << y << " ya existe en la lista de rebalse de la página " << pageIndex << endl;
-                return;
-            }
-        }
-
-        // Si el elemento no está, lo insertamos en la página
-        if (hashTable[pageIndex].elements.size() < PAGE_SIZE) {
-            hashTable[pageIndex].elements.push_back(y);
-        } else {
-            // Si la página está llena, lo insertamos en la lista de rebalse
-            hashTable[pageIndex].overflow.push_back(y);
+// Función aux: Entrega la ultima posicion vacia de la pagina de rebalse i
+/* vector<int> pag_r_y_posicion(vector<struct PaginaRebalse> v_pagR)
+{
+    vector<int> v = {-1, -1};
+    for (int i = 0; i < v_pagR.size(); i++) // Tamaño de la lista de la página de rebalse 'v_pagR'
+    {
+        struct PaginaRebalse v_pagR_i = v_pagR[i]; // Se obtiene la posición i de la página de rebalse
+        int pos = posicion_vacia(v_pagR_i.pagina_rebalse);
+        if (pos != -1)
+        {
+            v[0] = i;
+            v[1] = pos;
+            return v;
         }
     }
+    return v;
+} */
 
-    // Verifica si es necesario expandir la tabla hash
-    bool needsExpansion() {
-        return (p >= (1 << t));
+// Función aux: Imprime un vector de int
+void print_vector(vector<int> v)
+{
+    cout << "(";
+    for (int i = 0; i < (int)v.size(); i++)
+    {
+        cout << v[i] << " ";
     }
+    cout << ")\n";
+    return;
+}
 
-    // Expande la tabla hash
-    void expand() {
-        cout << "Expandiendo la tabla hash..." << endl;
-        // Añadimos una nueva página y redistribuimos los elementos
-        hashTable.push_back(Page());
-
-        int oldPageIndex = p - (1 << t);
-
-        if (oldPageIndex < hashTable.size() && p < hashTable.size()) {
-            redistribute(oldPageIndex, p);
-        } else {
-            cout << "Error: Índices fuera de los límites durante la expansión." << endl;
-            return;
-        }
-
-        p++;
-
-        if (p > (1 << (t + 1))) {
-            cout << "Error: Expansión incorrecta. P: " << p << ", t: " << t << endl;
-            return;
-        }
-
-        if (p == (1 << (t + 1))) {
-            t++; // Incrementamos el exponente t cuando p = 2^(t+1)
-        }
+// Función aux: Calcula el porcentaje de llenado de una página
+double porcentaje_llenado_pagina(vector<int> pag){
+    if (pag.size() == 128)
+    {
+        return 100;
+    } else {
+        return (pag.size() * 100) / 128;
     }
+}
 
-    // Redistribuye los elementos entre dos páginas
-    void redistribute(int oldPageIndex, int newPageIndex) {
-        if (oldPageIndex >= hashTable.size()) {
-            cout << "Error: El índice de la página vieja está fuera de los límites." << endl;
-            return;
-        }
+double porcentaje_llenado_ultp = 0;
 
-        if (newPageIndex >= hashTable.size()) {
-            cout << "Error: El índice de la nueva página está fuera de los límites." << endl;
-            return;
-        }
+// Función aux: Imprime un vector de páginas pricipales y sus páginas de rebalse
+void print_paginas(vector<struct PaginaPrincipal> p, int np)
+{
+    for (int i = 0; i < np; i++)
+    {
+        struct PaginaPrincipal pag_p = p[i];
+        cout << "Pag. principal -> " << i << "\n";
 
-        list<long long> temp;
-        // Recorremos la página y redistribuimos los elementos en base al nuevo valor hash.
-        for (long long y : hashTable[oldPageIndex].elements) {
-            long long k = hashFunction(y) % (1 << (t + 1));
-            if (k == newPageIndex) {
-                hashTable[newPageIndex].elements.push_back(y);
-            } else {
-                temp.push_back(y);
-            }
-        }
-        hashTable[oldPageIndex].elements = temp;
+        porcentaje_llenado_ultp = porcentaje_llenado_pagina(pag_p.pagina_principal);
 
-        // También redistribuimos los elementos de la lista de rebalse
-        list<long long> tempOverflow;
-        for (long long y : hashTable[oldPageIndex].overflow) {
-            long long k = hashFunction(y) % (1 << (t + 1));
-            if (k == newPageIndex) {
-                hashTable[newPageIndex].elements.push_back(y);
-            } else {
-                tempOverflow.push_back(y);
-            }
-        }
-        hashTable[oldPageIndex].overflow = tempOverflow;
-    }
+        cout << "Porcentaje de llenado: " << porcentaje_llenado_ultp << "%\n";
+        print_vector(pag_p.pagina_principal);
+        
 
-    // Imprimir tabla hash
-    void printHashTable() {
-        for (int i = 0; i < p; i++) {
-            cout << "Página " << i << ": ";
-            for (long long y : hashTable[i].elements) {
-                cout << y << " ";
-            }
-            cout << endl;
-
-            if (!hashTable[i].overflow.empty()) {
-                cout << "  Lista de rebalse: ";
-                for (long long y : hashTable[i].overflow) {
-                    cout << y << " ";
-                }
-                cout << endl;
+        if (pag_p.pagina_principal.size() == 128)
+        {
+            vector<struct PaginaRebalse> pags_r = pag_p.paginas_rebalse;
+            for (int j = 0; j < pags_r.size(); j++)
+            {
+                struct PaginaRebalse pagina_rebalse = pags_r[j];
+                cout << "Pag rebalse " << j << " (Pag. Princ. -> " << i << ")\n";
+                cout << "Porcentaje de llenado: " << porcentaje_llenado_pagina(pagina_rebalse.pagina_rebalse) << "%\n";
+                print_vector(pagina_rebalse.pagina_rebalse);
             }
         }
     }
+    return;
+}
+
+// Función aux: Imprime un HashingLineal completo
+void print_hash(HashingLineal *lh)
+{
+    cout << "Hashing Lineal:\n";
+    cout << "t: " << lh->t << "\n";
+    cout << "p: " << lh->p << "\n";
+    cout << "costo_actual: " << lh->costo_actual << "\n";
+    cout << "cantidad de elementos insertados: " << lh->cant_elementos_insert << "\n";
+    cout << "costo promedio real: " << ((lh -> costo_actual) / (lh ->cant_elementos_insert)) << "\n\n";
+    print_paginas(lh->paginas_principales, lh->p);
+    return;
+}
+
+// Funcion aux: Busca un elemento 'y' en un vector
+bool buscar_val_vec(int y, vector<int> v)
+{
+    for (int i = 0; i < v.size(); i++)
+    {
+        if (v[i] == y)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Función aux: Busca un elemento 'y' en un vector de paginas de rebalse
+bool buscar_val_vec_pagina_r(struct HashingLineal *lh, int y, vector<struct PaginaRebalse> pr)
+{
+    for (int j = 0; j < pr.size(); j++)
+    {
+        lh->costo_actual++;
+        vector<int> r = pr[j].pagina_rebalse;
+        if (buscar_val_vec(y, r))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Función aux: Busca un elemento 'y' en una pagina principal
+bool buscar_val_vec_pagina_p(struct HashingLineal *lh, int y, PaginaPrincipal pp)
+{
+    vector<struct PaginaRebalse> pr = pp.paginas_rebalse;
+    vector<int> p = pp.pagina_principal;
+    if (buscar_val_vec(y, p))
+    {
+        return true;
+    }
+    return buscar_val_vec_pagina_r(lh, y, pr); // Si no se encuentra en la pagina principal, 
+                                           // se busca en las paginas de rebalse
+}
+
+// Función aux: Busca un elemento "y" en la lista de hashing "HashingLineal"
+bool buscar_hash(int y, struct HashingLineal *lh)
+{
+    vector<struct PaginaPrincipal> pag_principal = lh->paginas_principales;
+    
+
+    if (pag_principal.size() < 1)
+    {
+        return false;
+    }
+    for (int i = 0; i < pag_principal.size(); i++)
+    {
+        PaginaPrincipal pagk = pag_principal[i];
+        // cout << "dentro del for\n";
+        lh->costo_actual++;
+        
+        if (buscar_val_vec_pagina_p(lh,y, pagk))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Función aux: Verifica si una página de rebalse tiene espacio para un nuevo elemento
+bool pagina_rebalse_libre(vector<PaginaRebalse> p_r)
+{
+    if (p_r[p_r.size() - 1].pagina_rebalse.size() < 128)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+// Función aux: Crea una nueva página de rebalse, inserta un elemento 'y',
+// la agrega a la tabla de hashing e incrementa el costo actual
+void crear_pagina_rebalse(struct HashingLineal *lh, int y, int k)
+{
+    struct PaginaRebalse *nueva_rebalse = new PaginaRebalse;
+    nueva_rebalse->pagina_rebalse.push_back(y);
+    lh->paginas_principales[k].paginas_rebalse.push_back(*nueva_rebalse);
+    lh->costo_actual++;
+    lh->cant_elementos_insert++;
+    return;
+}
+
+//Función aux: Crea una nueva página principal
+void crear_pagina_principal(struct HashingLineal *lh)
+{
+    struct PaginaPrincipal *nueva_principal = new PaginaPrincipal;
+    lh -> paginas_principales.push_back(*nueva_principal);
+    lh -> p++;
+    return;
 };
 
-int main() {
-    // Inicializamos la semilla para la función rand()
-    srand(time(0));
+// Inserta un elemento en la lista de hashing si este no se encuentra.
+void insertar_hash(int y, struct HashingLineal *lh, int cmax)
+{
+    vector<struct PaginaPrincipal> pag_principal = lh->paginas_principales;
 
-    int N = 100; // Número de elementos a insertar
-    LinearHashing hashTable(PAGE_SIZE);
-
-    // Insertamos N elementos en la tabla hash
-    for (int i = 0; i < N; i++) {
-        long long y = rand() % 1000000; // Generamos un número aleatorio de 64 bits
-        cout << "Insertando " << y << endl;
-        hashTable.insert(y);
+    // Buscar si el elemento "y" ya existe en la tabla de hashing
+    if (buscar_hash(y, lh))
+    {   
+        lh->cant_elementos_insert++;
+        // cout << "y ya existe\n";
+        return;
     }
 
-    // Imprimimos la tabla hash
-    hashTable.printHashTable();
+    if ((lh->cant_elementos_insert >=1) and (((lh ->costo_actual) / (lh ->cant_elementos_insert)) >= cmax)) 
+    {
+        crear_pagina_principal(lh);
+        lh -> costo_actual = 0;
+        lh -> t++;
+        //cout << "antes de insertar en expansien" << "\n";
+        insertar_hash(y, lh, cmax);
+        cout << "cantd paginas principales " << lh -> paginas_principales.size() <<"\n";
+        cout << "despues de insertar en expansion, " << y <<"\n";
+        if((lh ->p ) == (pow(2, lh->t)))
+        {
+            cout << "Hola, " << lh->p <<"\n";
+            return;
+        }
+        else
+        {
+            lh -> p--;
+            return;
+        }
+    }
+    
+    else
+    {
+        int k;
 
+        // Si el elemento "y" no se encuentra, se busca donde insertarlo
+        // Si el tamaño principal es menor que 2, se asigna el índice 'k' como 0
+        if (pag_principal.size() < 2)
+        {
+            k = 0;
+        }
+
+        // Caso contrario, se calcula 'k' como el hash del valor 'y' módulo 2^(t+1)
+        else
+        {
+            cout << "valor de h(y)" << h(y,lh->semilla_h) << "\n";
+            k = h(y,lh->semilla_h) % (long long)pow(2, lh->t + 1);
+        }
+
+        
+        // Si k < p, se inserta en la página k (o en una nueva si la actual rebalsa)
+        if (k < (lh->p))
+        {
+            vector<int> pagk = pag_principal[k].pagina_principal;
+
+
+            // Cuando la página k se rebalsa, se crea una nueva página de rebalse
+            if (pagk.size() == 128)
+            {
+                // Se verifica si la página k tiene asociada una página de rebalse
+                if (pag_principal[k].paginas_rebalse.size() >= 1)
+                {
+                    int largo_pag_r = pag_principal[k].paginas_rebalse.size();
+
+                    // Si tiene, se verifica que la página de rebalse tiene espacio y se inserta el elemento
+                    if (pagina_rebalse_libre(pag_principal[k].paginas_rebalse))
+                    {
+                        lh->paginas_principales[k].paginas_rebalse[largo_pag_r - 1].pagina_rebalse.push_back(y);
+                        lh->cant_elementos_insert++;
+                        return;
+                    }
+
+                    // Si la página de rebalse no tiene espacio, se crea una nueva página de rebalse
+                    else
+                    {
+                        crear_pagina_rebalse(lh, y, k);
+                    }
+                }
+
+                // Si la página 'k' no tiene, se crea una nueva página de rebalse
+                else
+                {
+                    crear_pagina_rebalse(lh, y, k);
+                }
+            }
+
+            // Si la página 'k' aún tiene espacio, se inserta el elemento en la página k
+            else
+            {
+                lh->paginas_principales[k].pagina_principal.push_back(y);
+                lh->cant_elementos_insert++;
+                return;
+            }
+        }
+
+        // Si k >= p, la página k aún no ha sido creada, por lo cual se debe insertar en la página k − 2^t.
+        else
+        {
+            int posicion = k - 2 * (lh->t);
+            if (posicion < 0)
+            {
+                // cout << "posicion <0\n";
+                struct PaginaPrincipal pag_0 = pag_principal[0];
+                // cout << "primera pag pric\n";
+                vector<int> pag_pag_0 = pag_0.pagina_principal;
+                int pos_i = posicion_vacia(pag_pag_0);
+                if (pos_i <= 128)
+                {
+                    lh->paginas_principales[0].pagina_principal.push_back(y);
+                    lh->cant_elementos_insert++;
+                    return;
+                }
+                else
+                {
+                    if (pag_0.paginas_rebalse.size() > 1)
+                    {
+                        int largo_pag_r = pag_0.paginas_rebalse.size();
+                        if (pagina_rebalse_libre(pag_0.paginas_rebalse))
+                        {
+                            lh->paginas_principales[k].paginas_rebalse[largo_pag_r - 1].pagina_rebalse.push_back(y);
+                            lh->cant_elementos_insert++;
+                            return;
+                        }
+                        else
+                        {
+                            crear_pagina_rebalse(lh, y, k);
+                        }
+                    }
+                    else
+                    {
+                        crear_pagina_rebalse(lh, y, k);
+                    }
+                }
+            }
+            
+            struct PaginaPrincipal pag_k_2t = pag_principal[posicion];
+            vector<int> pag_pag_k_2t = pag_k_2t.pagina_principal;
+            int pos_i = posicion_vacia(pag_pag_k_2t);
+            
+            if (pos_i <= 127)
+            {
+                lh->paginas_principales[posicion].pagina_principal.push_back(y);
+                lh->cant_elementos_insert++;
+                return;
+            }
+            else
+            {
+                if (pag_k_2t.paginas_rebalse.size() > 1)
+                {
+                    int largo_pag_r = pag_k_2t.paginas_rebalse.size();
+                    if (pagina_rebalse_libre(pag_k_2t.paginas_rebalse))
+                    {
+                        lh->paginas_principales[k].paginas_rebalse[largo_pag_r - 1].pagina_rebalse.push_back(y);
+                        lh->cant_elementos_insert++;
+                        return;
+                    }
+                    else
+                    {
+                        crear_pagina_rebalse(lh, y, k);
+                    }
+                }
+                else
+                {
+                    crear_pagina_rebalse(lh, y, k);
+                }
+            }
+            return;
+        }
+    }
+}
+
+// Función aux: Crea un HashingLineal con t y p paginas
+struct HashingLineal *crear_HashingLineal(int t, int p)
+{
+    int s = rand();
+    struct HashingLineal *lh = new HashingLineal;
+    lh->t = t;
+    lh->p = p;
+    lh->semilla_h = s;
+    lh->costo_actual = 0;
+    lh->cant_elementos_insert = 0;
+    vector<struct PaginaPrincipal> pag_princ;
+    for (int i = 0; i < p; i++)
+    {
+        struct PaginaPrincipal pag_i;
+        pag_princ.push_back(pag_i);
+    }
+    lh->paginas_principales = pag_princ;
+    return lh;
+}
+
+// Función principal
+int main2()
+{
+
+    srand(static_cast<unsigned int>(time(0)));
+
+    struct HashingLineal *lh = crear_HashingLineal(0, 1);
+    cout<<"lh "<<lh->semilla_h<<" ";
+    
+    for (int i = 1; i < pow(2,10); i++)
+    {
+        insertar_hash(i, lh, 2000);
+    }
+    
+    for (int i = 1; i < 10; i++)
+    {
+        long long hash = h(i,lh->semilla_h);
+        cout << "valor de hashing: " << hash << "\n";
+    }
+
+    for (int i = 1; i < 10; i++)
+    {
+        long long hash = h(i,lh->semilla_h);
+        cout << "valor de hashing 2: " << hash << "\n";
+    }
+
+    delete lh;
+
+    cout << "Nuevo hashing: " << "\n";
+    
+    struct HashingLineal *lh1 = crear_HashingLineal(0, 1);
+    cout<<"lh1 "<<lh->semilla_h;
+
+    for (int i = 1; i < pow(2,10); i++)
+    {
+        insertar_hash(i, lh1, 2000);
+    }
+
+    for (int i = 1; i < 10; i++)
+    {
+        long long hash = h(i,lh1->semilla_h);
+        cout << "valor de hashing: " << hash << "\n";
+    }
+
+    delete lh1;
+    //print_hash(lh);
+    return 0;
+}
+
+// Función aux: Agrega valores al vector que almacena costos reales y controlados
+void agregar_vals_vec1(int exponente, int costo_real, int cmax){
+    // Crear dos vectores para almacenar exponentes, costos reales y costos controlados
+    std::vector<int> exponentes;              // Vector de exponentes
+    std::vector<int> costosReales;            // Vector de costos reales
+    std::vector<int> costosControlados;       // Vector de costos controlados
+
+    exponentes.push_back(exponente);
+    costosReales.push_back(exponente);
+    costosControlados.push_back(exponente);
+
+    for (size_t i = 0; i < exponentes.size(); ++i) {
+        std::cout << exponentes[i] << " ";
+        std::cout << costosReales[i] << " ";
+        std::cout << costosControlados[i] << " ";
+    }
+}
+
+// Función aux: Agrega valores al vector que almacena el porcentaje de llenado de las páginas y el costo promedio real
+void agregar_vals_vec2(int exponente, double porcentaje_llenado, int costo_real) {
+    
+}
+
+int main()
+{
+    srand(static_cast<unsigned int>(time(0)));
+    
+    int base = 2;
+    int exponente = 10;
+    int cmax = 1000;
+    int costo_prom_real = 0;
+
+    do {
+        struct HashingLineal *lh = crear_HashingLineal(0, 1);
+
+        for (int i = 1; i < pow(base,exponente); i++)
+        {
+            insertar_hash(i, lh, cmax);
+        }
+
+        costo_prom_real = ((lh->costo_actual) / (lh->cant_elementos_insert));
+
+        // Agregar valores al vector que almacena costos reales y controlados
+        agregar_vals_vec1(exponente, costo_prom_real, cmax);
+
+        // Agregar valores al vector que almacena el porcentaje de llenado de las páginas y el costo promedio real
+        agregar_vals_vec2(exponente, porcentaje_llenado_ultp, costo_prom_real);
+
+        //print_hash(lh);
+        delete lh;
+
+        exponente += 2;
+    } while (exponente <= 14);
+
+    // Realizar variaciones en el costo promedio - Cmax
+    // - Imprimir costo real -> costo_actual / cantidad de elementos insertados ((lh ->costo_actual) / (lh ->cant_elementos_insert))
+    // - Imprimir costo controlado
+    // Como varía el costo primedio real cuando cambia Cmax
+    // Porcentaje de llenado
+
+
+    // Promedio de llenado de las paginas - ultimo porcentaje y ademas el promedio
+
+    // print_hash(lh);
+
+    // delete lh;
     return 0;
 }
