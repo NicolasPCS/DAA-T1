@@ -164,10 +164,10 @@ bool buscar_hash(int y, struct HashingLineal *lh, int k)
     {
         return false;
     }
-    if(pagk.pagina_principal.size()<128){
-        lh->costo_actual++;
-        return buscar_val_vec(y, pagk.pagina_principal);
-    }
+    // if(pagk.pagina_principal.size()<128){
+    //     lh->costo_actual++;
+    //     return buscar_val_vec(y, pagk.pagina_principal);
+    // }
     lh->costo_actual++;
     return buscar_val_vec_pagina_p(lh,y, pagk);
 }
@@ -254,15 +254,7 @@ struct HashingLineal *Expancion_Hash(struct HashingLineal *lh, int k,vector<int>
     *elem= extraer_para_insertar(lh,k);
     borrar_pag(lh,k,elem->size());
     lh= crear_pagina_principal(lh);
-    if((lh ->p ) == (pow(2, lh->t+1)))
-    {
-        lh->t++;
-        return lh;
-    }
-    else
-    {
-        return lh;
-    }
+    
     return lh;
 }
 // Función aux: Crea una nueva página de rebalse, inserta un elemento 'y',
@@ -283,20 +275,8 @@ void insertar_hash(int y, struct HashingLineal *lh, int cmax)
     vector<struct PaginaPrincipal> pag_principal = lh->paginas_principales;
     vector<int>elem;
 
-    int k;
-    // Si el elemento "y" no se encuentra, se busca donde insertarlo
-    // Si el tamaño principal es menor que 2, se asigna el índice 'k' como 0
-    if (lh->paginas_principales.size() <2)
-    {
-        k = 0;
-    }
+    int k = h(y,lh->semilla_h) % (long long)pow(2, lh->t + 1);
 
-    // Caso contrario, se calcula 'k' como el hash del valor 'y' módulo 2^(t+1)
-    else
-    {
-        k = h(y,lh->semilla_h) % (long long)pow(2, lh->t + 1);
-    }
-    //cout<<k<<"\n";
     // Buscar si el elemento "y" ya existe en la tabla de hashing
     if (k<lh->p)
     {
@@ -330,6 +310,11 @@ void insertar_hash(int y, struct HashingLineal *lh, int cmax)
         //cout<<"n pag -> "<<lh ->paginas_principales.size() <<" == "<<lh ->p<<"\n";
         for(int i=0;i<elem.size();i++){
             insertar_hash(elem[i],lh,cmax);
+        }
+
+        if((lh ->p ) == (pow(2, lh->t+1)))
+        {
+            lh->t++;
         }
         //re_insertar(elem,lh,0);
         //cout<<"Se expandio -> "<<lh ->costo_actual <<" y "<<lh ->cant_elementos_insert<<" y= "<< y<<"\n";
@@ -473,7 +458,7 @@ int main()
 {
     struct HashingLineal *lh = crear_HashingLineal(0, 1);
     for(int i=0;i<2000;i++){
-        insertar_hash(i,lh,3);
+        insertar_hash(i,lh,2);
     }
     print_hash(lh);
     return 0;
