@@ -303,11 +303,11 @@ void insertar_hash(int y, struct HashingLineal *lh, int cmax)
     //cout<<"Antes de verificar condicion de expancion\n";
     if ((lh->cant_elementos_insert >=1) and (((lh ->costo_actual) / (lh ->cant_elementos_insert)) >= cmax))
     {
-        //cout<<"Se debe expandir -> "<<lh ->costo_actual <<" y "<<lh ->cant_elementos_insert<<" y= "<< y<<"\n";
+        int costo_act=lh ->costo_actual;
         int cnt_elem=lh->cant_elementos_insert;
         lh=Expancion_Hash(lh,k,&elem);
         elem.push_back(y);
-        //cout<<"n pag -> "<<lh ->paginas_principales.size() <<" == "<<lh ->p<<"\n";
+        cout<<"Se expandio -> "<<costo_act <<" elementos= "<<cnt_elem<<"\n";
         for(int i=0;i<elem.size();i++){
             insertar_hash(elem[i],lh,cmax);
         }
@@ -316,9 +316,9 @@ void insertar_hash(int y, struct HashingLineal *lh, int cmax)
         {
             lh->t++;
         }
-        //re_insertar(elem,lh,0);
-        //cout<<"Se expandio -> "<<lh ->costo_actual <<" y "<<lh ->cant_elementos_insert<<" y= "<< y<<"\n";
         lh->cant_elementos_insert=cnt_elem + 1;
+        int costo_n=lh->costo_actual;
+        lh->costo_actual=costo_act-costo_n;
         return;   
     }
     
