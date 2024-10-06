@@ -496,7 +496,7 @@ int main()
 
         delete lh;
         exponente += 1;
-    } while (exponente <= 17);
+    } while (exponente <= 21);
 
     str_exponente.erase(str_exponente.size() - 2);
     str_creal.erase(str_creal.size() - 2);
