@@ -494,6 +494,14 @@ int main()
         str_cmax += to_string(cmax) + ", ";
         str_pllenado += to_string(prom_porcentaje_llenado) + "%, ";
 
+        cout << str_exponente << "\n"
+             << str_creal << "\n"
+             << str_cmax << "\n\n";
+
+        cout << str_exponente << "\n"
+             << str_pllenado << "\n"
+             << str_creal << "\n";
+
         delete lh;
         exponente += 1;
     } while (exponente <= 24);
